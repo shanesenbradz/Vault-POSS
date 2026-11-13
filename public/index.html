@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="botanical" data-mode="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VaultPOS</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+
+<!-- ============ LOGIN SCREEN ============ -->
+<div id="login-screen" class="login-screen">
+  <div class="login-card">
+    <div class="brand">
+      <div class="brand-mark">V</div>
+      <div>
+        <div class="brand-title" id="shop-name-display">VaultPOS</div>
+        <div class="brand-sub">Offline-first shop management</div>
+      </div>
+    </div>
+
+    <div id="profile-grid" class="profile-grid"></div>
+
+    <div id="pin-pad-wrap" class="pin-pad-wrap hidden">
+      <button id="pin-back" class="link-btn" data-icon="arrowleft"><span class="icon"></span> back to profiles</button>
+      <div class="pin-target" id="pin-target-name">Enter PIN</div>
+      <div class="pin-dots" id="pin-dots" aria-label="PIN digits entered">
+        <span></span><span></span><span></span><span></span>
+      </div>
+      <div class="pin-pad" id="pin-pad">
+        <button data-k="1">1</button><button data-k="2">2</button><button data-k="3">3</button>
+        <button data-k="4">4</button><button data-k="5">5</button><button data-k="6">6</button>
+        <button data-k="7">7</button><button data-k="8">8</button><button data-k="9">9</button>
+        <button data-k="clear" class="pin-alt">Clear</button><button data-k="0">0</button><button data-k="back" class="pin-alt" data-icon="backspace"><span class="icon"></span></button>
+      </div>
+      <button id="pin-submit" class="primary-btn full pin-submit" type="button" disabled>Unlock</button>
+      <div class="muted pin-hint">You can also type your PIN on the keyboard and press Enter.</div>
+      <div id="pin-error" class="pin-error" role="alert"></div>
+    </div>
+
+    <button id="add-profile-btn" class="ghost-btn">+ Add profile</button>
+  </div>
+</div>
+
+<!-- ============ MAIN APP ============ -->
+<div id="app" class="app hidden">
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-mark small">V</div>
+      <span id="sidebar-shop-name">VaultPOS</span>
+    </div>
+    <nav class="nav">
+      <button class="nav-btn active" data-view="pos" data-icon="checkout"><span class="icon"></span> Checkout</button>
+      <button class="nav-btn" data-view="timeline" data-icon="timeline"><span class="icon"></span> Timeline</button>
+      <button class="nav-btn" data-view="inventory" data-icon="inventory"><span class="icon"></span> Inventory</button>
+      <button class="nav-btn" data-view="clients" data-icon="clients"><span class="icon"></span> Clients</button>
+      <button class="nav-btn admin-only" data-view="reports" data-icon="reports"><span class="icon"></span> Reports</button>
+      <button class="nav-btn" data-view="todos" data-icon="todos"><span class="icon"></span> To-Dos</button>
+      <button class="nav-btn" data-view="calendar" data-icon="calendar"><span class="icon"></span> Calendar</button>
+      <button class="nav-btn admin-only" data-view="settings" data-icon="settings"><span class="icon"></span> Settings</button>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="active-profile" id="active-profile-chip">
+        <span class="dot" id="active-profile-dot"></span>
+        <div>
+          <div class="ap-name" id="active-profile-name">-</div>
+          <div class="ap-role" id="active-profile-role">-</div>
+        </div>
+      </div>
+      <button id="switch-shift-btn" class="ghost-btn small">Switch profile</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <!-- ---------- POS / CHECKOUT ---------- -->
+    <section id="view-pos" class="view active">
+      <div class="view-header">
+        <h1>Checkout</h1>
+        <input id="scan-input" class="scan-input" placeholder="Scan barcode or type SKU / name, then Enter" autocomplete="off">
+      </div>
+      <div class="pos-grid">
+        <div class="pos-catalog">
+          <div class="catalog-controls">
+            <input id="catalog-search" placeholder="Search items…">
+            <select id="catalog-category"><option value="">All categories</option></select>
+          </div>
+          <div id="catalog-list" class="catalog-list"></div>
+        </div>
+        <div class="pos-cart">
+          <h3>Current sale</h3>
+          <label class="customer-picker-label">Client
+            <div class="customer-picker">
+              <select id="customer-select"><option value="">Walk-in (no client)</option></select>
+              <button id="new-client-inline-btn" class="ghost-btn small" type="button">+ New</button>
+            </div>
+          </label>
+          <div id="cart-list" class="cart-list"></div>
+          <div class="cart-totals">
+            <div class="row"><span>Items</span><span id="cart-item-count">0</span></div>
+            <div class="row total"><span>Total</span><span id="cart-total">$0.00</span></div>
+          </div>
+          <button id="checkout-btn" class="primary-btn full">Complete sale</button>
+          <button id="clear-cart-btn" class="ghost-btn full">Clear cart</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- TIMELINE ---------- -->
+    <section id="view-timeline" class="view">
+      <div class="view-header"><h1>Sales timeline</h1></div>
+      <div id="timeline-feed" class="timeline-feed"></div>
+    </section>
+
+    <!-- ---------- INVENTORY ---------- -->
+    <section id="view-inventory" class="view">
+      <div class="view-header">
+        <h1>Inventory</h1>
+        <div class="header-actions">
+          <input type="file" id="csv-import-input" accept=".csv" class="hidden">
+          <button id="csv-import-btn" class="ghost-btn admin-only">Import CSV</button>
+          <button id="csv-export-btn" class="ghost-btn">Export CSV</button>
+          <button id="add-item-btn" class="primary-btn admin-only">+ Add item</button>
+        </div>
+      </div>
+      <div id="low-stock-banner" class="low-stock-banner hidden"></div>
+      <table class="item-table">
+        <thead><tr>
+          <th>Name</th><th>SKU / Barcode</th><th>Category</th><th class="admin-only">Cost</th><th>Price</th><th>Stock</th><th></th>
+        </tr></thead>
+        <tbody id="inventory-tbody"></tbody>
+      </table>
+    </section>
+
+    <!-- ---------- CLIENTS ---------- -->
+    <section id="view-clients" class="view">
+      <div class="view-header">
+        <h1>Clients</h1>
+        <div class="header-actions">
+          <input id="client-search" placeholder="Search clients...">
+          <button id="add-client-btn" class="primary-btn">+ Add client</button>
+        </div>
+      </div>
+      <table class="item-table">
+        <thead><tr><th>Name</th><th>Phone</th><th>Email</th><th>Visits</th><th>Lifetime spend</th><th></th></tr></thead>
+        <tbody id="clients-tbody"></tbody>
+      </table>
+    </section>
+
+    <!-- ---------- REPORTS ---------- -->
+    <section id="view-reports" class="view">
+      <div class="view-header"><h1>Reports</h1></div>
+      <div class="report-controls">
+        <label>From <input type="date" id="report-from"></label>
+        <label>To <input type="date" id="report-to"></label>
+        <button id="report-run-btn" class="primary-btn">Run report</button>
+        <button id="report-export-btn" class="ghost-btn">Export CSV</button>
+      </div>
+      <div class="report-cards">
+        <div class="report-card"><div class="rc-label">Sales</div><div class="rc-value" id="rc-sales">0</div></div>
+        <div class="report-card"><div class="rc-label">Revenue</div><div class="rc-value" id="rc-revenue">$0.00</div></div>
+        <div class="report-card"><div class="rc-label">Est. profit</div><div class="rc-value" id="rc-profit">$0.00</div></div>
+      </div>
+      <h3>Top items</h3>
+      <table class="item-table"><thead><tr><th>Item</th><th>Qty sold</th><th>Revenue</th><th>Profit</th></tr></thead>
+        <tbody id="top-items-tbody"></tbody>
+      </table>
+    </section>
+
+    <!-- ---------- TODOS ---------- -->
+    <section id="view-todos" class="view">
+      <div class="view-header"><h1>To-dos</h1></div>
+      <div class="todo-columns">
+        <div class="todo-col">
+          <h3>Personal</h3>
+          <form id="personal-todo-form" class="todo-form"><input placeholder="Add a personal task…" required></form>
+          <div id="personal-todo-list" class="todo-list"></div>
+        </div>
+        <div class="todo-col">
+          <h3>Shop operations <span class="tag">shared</span></h3>
+          <form id="shop-todo-form" class="todo-form"><input placeholder="Add a shop-wide task…" required></form>
+          <div id="shop-todo-list" class="todo-list"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- CALENDAR ---------- -->
+    <section id="view-calendar" class="view">
+      <div class="view-header">
+        <h1>Activity organizer</h1>
+        <button id="add-event-btn" class="primary-btn">+ Add event</button>
+      </div>
+      <div id="calendar-list" class="calendar-list"></div>
+    </section>
+
+    <!-- ---------- SETTINGS ---------- -->
+    <section id="view-settings" class="view">
+      <div class="view-header"><h1>Settings</h1></div>
+      <div class="settings-grid">
+        <div class="settings-card">
+          <h3>Shop</h3>
+          <label>Shop name <input id="setting-shop-name"></label>
+          <button id="save-shop-name-btn" class="primary-btn small">Save</button>
+        </div>
+        <div class="settings-card">
+          <h3>Theme</h3>
+          <div class="theme-options">
+            <button class="theme-swatch" data-theme="girly">Girly / Pastel Pop</button>
+            <button class="theme-swatch" data-theme="botanical">Earthy / Botanical</button>
+            <button class="theme-swatch" data-theme="corporate">Serious / Corporate</button>
+          </div>
+          <div class="mode-toggle">
+            <button id="mode-light-btn"><span class="icon"></span> Light</button>
+            <button id="mode-dark-btn"><span class="icon"></span> Dark</button>
+          </div>
+        </div>
+        <div class="settings-card">
+          <h3>Profiles &amp; staff</h3>
+          <div id="settings-profile-list"></div>
+          <button id="settings-add-profile-btn" class="ghost-btn small">+ Add profile</button>
+        </div>
+        <div class="settings-card">
+          <h3>Backups</h3>
+          <p class="muted">Export a full copy of your vault for safekeeping. No cloud, no account - just a file on your machine.</p>
+          <button id="export-json-btn" class="ghost-btn full">Export vault (.json)</button>
+          <button id="export-db-btn" class="ghost-btn full">Export vault (.db)</button>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- ============ MODAL HOST ============ -->
+<div id="modal-host" class="modal-host hidden">
+  <div class="modal-backdrop"></div>
+  <div class="modal-box" id="modal-box"></div>
+</div>
+
+<!-- Hidden receipt template for printing -->
+<div id="receipt-print-area" class="hidden"></div>
+
+<script src="/js/app.js"></script>
+</body>
+</html>
