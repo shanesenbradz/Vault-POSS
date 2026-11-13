@@ -776,45 +776,75 @@ async function handler(req, res) {
   }
 }
 
-const server = http.createServer((req, res) => { handler(req, res); });
-
-server.on('error', (err) => {
-  if (err.code === 'EADDRINUSE') {
-    console.error(`\n  Port ${PORT} is already in use. Is VaultPOS already running in another window?`);
-    console.error('  Close it, or start on another port, e.g.  PORT=7070 node server.js\n');
-  } else {
-    console.error(err);
-  }
-  process.exit(1);
-});
-
-server.listen(PORT, HOST, () => {
+function lanAddresses() {
+  const out = [];
   const nets = os.networkInterfaces();
-  const lan = [];
   for (const name of Object.keys(nets)) {
-    for (const net of nets[name] || []) {
-      if (net.family === 'IPv4' && !net.internal) lan.push(net.address);
+    for (const n of nets[name] || []) {
+      if (n.family === 'IPv4' && !n.internal) out.push(n.address);
     }
   }
-  const defaultPin = db.prepare("SELECT pin_hash, pin_salt FROM profiles WHERE id = 1 AND active = 1").get();
-  console.log('');
-  console.log('  VaultPOS is running');
-  console.log('  ------------------------------------------');
-  console.log(`  On this computer:   http://127.0.0.1:${PORT}`);
-  if (HOST === '0.0.0.0') lan.forEach((ip) => console.log(`  On your Wi-Fi/LAN:  http://${ip}:${PORT}`));
-  console.log('  ------------------------------------------');
-  if (defaultPin && verifyPin('0000', defaultPin.pin_hash, defaultPin.pin_salt)) {
-    console.log('  Default login -> Profile: Owner   PIN: 0000');
-    console.log('  (Change this PIN now from Settings > Profiles & staff)');
-  }
-  console.log('  Keep this window open while you use VaultPOS.');
-  console.log('');
-});
-
-function shutdown() {
-  server.close();
-  try { db.close(); } catch (_) {}
-  process.exit(0);
+  return out;
 }
-process.on('SIGINT', shutdown);
-process.on('SIGTERM', shutdown);
+
+function usingDefaultPin() {
+  const p = db.prepare('SELECT pin_hash, pin_salt FROM profiles WHERE id = 1 AND active = 1').get();
+  return !!(p && verifyPin('0000', p.pin_hash, p.pin_salt));
+}
+
+// Start the HTTP server. Used by the command line (below) and by the desktop app.
+// Resolves with { server, port, host }. If fallbackPort is true and the port is
+// taken, a free port is picked instead of failing.
+function start({ port = PORT, host = HOST, fallbackPort = false } = {}) {
+  return new Promise((resolve, reject) => {
+    const server = http.createServer((req, res) => { handler(req, res); });
+    const onError = (err) => {
+      if (err.code === 'EADDRINUSE' && fallbackPort && port !== 0) {
+        server.removeListener('error', onError);
+        start({ port: 0, host, fallbackPort: false }).then(resolve, reject);
+      } else {
+        reject(err);
+      }
+    };
+    server.once('error', onError);
+    server.listen(port, host, () => {
+      server.removeListener('error', onError);
+      resolve({ server, port: server.address().port, host });
+    });
+  });
+}
+
+function close() {
+  try { db.close(); } catch (_) {}
+}
+
+module.exports = { start, close, lanAddresses, usingDefaultPin, db, DB_PATH, DATA_DIR };
+
+// ---------- command line: node server.js ----------
+if (require.main === module) {
+  start().then(({ server, port, host }) => {
+    console.log('');
+    console.log('  VaultPOS is running');
+    console.log('  ------------------------------------------');
+    console.log(`  On this computer:   http://127.0.0.1:${port}`);
+    if (host === '0.0.0.0') lanAddresses().forEach((ip) => console.log(`  On your Wi-Fi/LAN:  http://${ip}:${port}`));
+    console.log('  ------------------------------------------');
+    if (usingDefaultPin()) {
+      console.log('  Default login -> Profile: Owner   PIN: 0000');
+      console.log('  (Change this PIN now from Settings > Profiles & staff)');
+    }
+    console.log('  Keep this window open while you use VaultPOS.');
+    console.log('');
+    const shutdown = () => { server.close(); close(); process.exit(0); };
+    process.on('SIGINT', shutdown);
+    process.on('SIGTERM', shutdown);
+  }).catch((err) => {
+    if (err.code === 'EADDRINUSE') {
+      console.error(`\n  Port ${PORT} is already in use. Is VaultPOS already running in another window?`);
+      console.error('  Close it, or start on another port, e.g.  PORT=7070 node server.js\n');
+    } else {
+      console.error(err);
+    }
+    process.exit(1);
+  });
+}

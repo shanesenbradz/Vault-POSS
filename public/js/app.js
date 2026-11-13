@@ -973,6 +973,12 @@
   // ================================================================
   // BOOT
   // ================================================================
+  // Installable web app. Browsers only allow this on https or on the computer
+  // running the server (127.0.0.1 / localhost); on plain-http LAN addresses it is skipped.
+  if ('serviceWorker' in navigator && window.isSecureContext) {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  }
+
   (async function boot() {
     try {
       const settings = await api('/settings');
