@@ -6,6 +6,67 @@ An offline-first, local shop management & point-of-sale system. Runs entirely on
 computer (or over your local Wi-Fi/LAN) - no cloud, no account, no internet required
 after setup.
 
+There are three ways to use it, all running the same app on the same kind of data file:
+
+| | What it is | Best for |
+|---|---|---|
+| **Desktop app** | Windows installer / portable `.exe`, Linux AppImage / `.deb` | The main till. Nothing else to install. |
+| **Web app** | Open the address in any browser, or install it to the home screen | Tablets, phones and a second till on the same Wi-Fi |
+| **Server only** | `node server.js` | Headless shop PCs, Raspberry Pi, people who prefer a terminal |
+
+## Download
+
+Get the latest version from the **[Releases page](https://github.com/shanesenbradz/Vault-POSS/releases/latest)**:
+
+| System | File | How to run |
+|---|---|---|
+| Windows (install) | `VaultPOS-Setup-x.y.z.exe` | Double-click, follow the installer. Adds Start menu and desktop shortcuts. |
+| Windows (no install) | `VaultPOS-x.y.z-portable.exe` | Double-click to run. Good on a USB stick. |
+| Linux (any distro) | `VaultPOS-x.y.z-linux-x86_64.AppImage` | `chmod +x VaultPOS-*.AppImage` then run it. |
+| Ubuntu / Debian / Mint | `VaultPOS-x.y.z-linux-amd64.deb` | `sudo apt install ./VaultPOS-*.deb`, then find VaultPOS in your app menu. |
+
+The Windows builds aren't code-signed yet, so Windows SmartScreen may say "Windows
+protected your PC". Click **More info → Run anyway**.
+
+## Desktop app
+
+The desktop app runs the VaultPOS server inside itself and shows it in its own window,
+so there's no Node.js to install and no console window to keep open. It adds a menu with:
+
+- **File → Back up vault… (Ctrl+B)** - save a backup `.db` anywhere you like.
+- **File → Restore from backup…** - load a backup (or a `vault.sqlite` from the
+  server-only version). A safety copy of the current vault is kept first.
+- **File → Open data folder** - where your vault lives:
+  - Windows: `%APPDATA%\VaultPOS\data`
+  - Linux: `~/.config/VaultPOS/data`
+- **Network → Connect other devices…** - shows the address tablets and phones should
+  open, with a copy button.
+- **Network → Allow other devices on this Wi-Fi** - turn LAN sharing off if this
+  computer should be the only till.
+
+Only one copy of the app runs at a time; opening it again just brings the window back.
+If port 6969 is busy, the app picks another free port and tells you in
+**Connect other devices**.
+
+**Moving from the server-only version:** copy `data/vault.sqlite` somewhere safe, open
+the desktop app, and use **File → Restore from backup…** on that file.
+
+## Web app (tablets, phones, second tills)
+
+While VaultPOS is running on the main computer, open the LAN address it shows (for
+example `http://192.168.1.42:6969`) in any browser on the same Wi-Fi.
+
+To get an app icon on the device:
+
+- **iPad / iPhone (Safari):** Share → **Add to Home Screen**. It opens full-screen like an app.
+- **Android (Chrome):** menu → **Add to Home screen**.
+- **On the main computer (Chrome / Edge at `http://127.0.0.1:6969`):** the install icon
+  in the address bar installs it as a proper app window.
+
+Browsers only allow the full "install" (offline app shell, own window) on `https` or on
+the computer running the server, so on other devices over plain Wi-Fi it's a home screen
+shortcut instead. Everything works the same either way.
+
 ## What's inside
 
 - **Local server** - pure Node.js (`http` + the built-in `node:sqlite` module). There is
@@ -26,7 +87,7 @@ after setup.
 - Devices that only *view* the app in a browser (a tablet, a second till) don't need
   Node.js installed - only the one machine actually running the server does.
 
-## Running it
+## Running the server-only version
 
 ### Windows
 1. Install Node.js from https://nodejs.org if you haven't already (see Requirements
@@ -190,21 +251,41 @@ zero internet connection.
 
 ```
 vaultpos/
-  server.js         # HTTP server + all API routes
+  server.js         # HTTP server + all API routes (also started by the desktop app)
   db.js             # SQLite schema, migrations, seed data, PIN hashing
   package.json
   start-windows.bat
   start-linux.sh
+  desktop/
+    main.js         # desktop app (Electron): window, menus, backups, LAN sharing
+    icons/          # app icons for Windows (.ico) and Linux (.png)
+  .github/workflows/
+    build.yml       # tests on Windows + Linux, builds releases from version tags
   test/
     api.test.js     # end-to-end API tests (npm test)
   public/
     index.html      # single-page app shell
+    manifest.webmanifest, sw.js, icons/   # installable web app
     favicon.svg
     css/styles.css  # theme tokens + component styles
     js/app.js       # all frontend logic
   data/
     vault.sqlite    # created automatically on first run (not committed to git)
 ```
+
+## Building the desktop apps yourself
+
+```bash
+npm install
+npm run desktop       # run the desktop app from source
+npm run dist:linux    # AppImage + .deb in dist/
+npm run dist:win      # Windows installer + portable .exe in dist/
+```
+
+Building the Windows files on Linux needs Wine installed. The easy route is to let
+GitHub do it: pushing a tag such as `v1.2.0` runs `.github/workflows/build.yml`, which
+tests on Windows and Linux, builds every file on the matching system, and attaches
+them to a GitHub Release.
 
 ## Running the tests
 
@@ -225,6 +306,16 @@ anyone on the same network could read traffic. Don't expose port 6969 to the pub
 internet or an untrusted network.
 
 ## Changelog
+
+### 1.2.0
+- **Desktop app for Windows and Linux**: installer, portable `.exe`, AppImage and
+  `.deb`. No Node.js needed. Built-in backup, restore, data folder and LAN sharing
+  menus, remembers its window size, single instance.
+- **Installable web app**: manifest, icons and an offline app shell so it can be added
+  to home screens and installed from Chrome/Edge.
+- Automatic builds and releases on GitHub, with tests run on both Windows and Linux.
+- The server can now be started from code (`require('./server').start()`), which is how
+  the desktop app runs it.
 
 ### 1.1.0
 **Security**

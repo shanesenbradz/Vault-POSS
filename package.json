@@ -1,17 +1,119 @@
 {
   "name": "vaultpos",
-  "version": "1.1.0",
-  "description": "Offline-first local shop management & POS server. No install step, no external dependencies.",
-  "main": "server.js",
+  "productName": "VaultPOS",
+  "version": "1.2.0",
+  "description": "Offline-first shop management & POS. Desktop app for Windows and Linux, or a local server any browser can use.",
+  "main": "desktop/main.js",
   "scripts": {
     "start": "node --disable-warning=ExperimentalWarning server.js",
-    "test": "node --disable-warning=ExperimentalWarning --test test/*.test.js"
+    "desktop": "electron .",
+    "test": "node --disable-warning=ExperimentalWarning --test test/*.test.js",
+    "dist:linux": "electron-builder --linux --publish never",
+    "dist:win": "electron-builder --win --publish never",
+    "dist": "electron-builder --publish never"
   },
   "engines": {
     "node": ">=22.13.0"
   },
-  "author": "Bradley Williams (https://github.com/shanesenbradz)",
-  "repository": { "type": "git", "url": "https://github.com/shanesenbradz/Vault-POSS.git" },
+  "author": {
+    "name": "Bradley Williams",
+    "url": "https://github.com/shanesenbradz"
+  },
+  "homepage": "https://github.com/shanesenbradz/Vault-POSS",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/shanesenbradz/Vault-POSS.git"
+  },
   "license": "UNLICENSED",
-  "private": true
+  "private": true,
+  "devDependencies": {
+    "electron": "^45.3.1",
+    "electron-builder": "^26.18.0"
+  },
+  "build": {
+    "appId": "io.github.shanesenbradz.vaultpos",
+    "productName": "VaultPOS",
+    "copyright": "Copyright © 2026 Bradley Williams",
+    "directories": {
+      "output": "dist",
+      "buildResources": "desktop/icons"
+    },
+    "files": [
+      "server.js",
+      "db.js",
+      "public/**/*",
+      "desktop/**/*",
+      "package.json",
+      "!**/*.map"
+    ],
+    "asar": true,
+    "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "desktop/icons/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "VaultPOS",
+      "deleteAppDataOnUninstall": false,
+      "artifactName": "${productName}-Setup-${version}.${ext}"
+    },
+    "portable": {
+      "artifactName": "${productName}-${version}-portable.${ext}"
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "deb",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "category": "Office",
+      "icon": "desktop/icons/icon.png",
+      "maintainer": "Bradley Williams <shanesenbradz@users.noreply.github.com>",
+      "synopsis": "Offline-first shop POS",
+      "desktop": {
+        "entry": {
+          "Name": "VaultPOS",
+          "Comment": "Shop management and point of sale",
+          "Keywords": "pos;shop;till;inventory;"
+        }
+      },
+      "syncDesktopName": true
+    },
+    "deb": {
+      "depends": [
+        "libnss3",
+        "libgtk-3-0",
+        "libxss1",
+        "libasound2 | libasound2t64"
+      ]
+    }
+  },
+  "desktopName": "vaultpos.desktop"
 }
