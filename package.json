@@ -1,0 +1,17 @@
+{
+  "name": "vaultpos",
+  "version": "1.1.0",
+  "description": "Offline-first local shop management & POS server. No install step, no external dependencies.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node --disable-warning=ExperimentalWarning server.js",
+    "test": "node --disable-warning=ExperimentalWarning --test test/*.test.js"
+  },
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "author": "Bradley Williams (https://github.com/shanesenbradz)",
+  "repository": { "type": "git", "url": "https://github.com/shanesenbradz/Vault-POSS.git" },
+  "license": "UNLICENSED",
+  "private": true
+}

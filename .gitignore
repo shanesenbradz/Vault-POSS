@@ -1,0 +1,11 @@
+# Your shop's live data: never commit it
+data/
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+*.db
+
+node_modules/
+.DS_Store
+Thumbs.db
+*.log
