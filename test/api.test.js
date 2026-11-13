@@ -47,9 +47,15 @@ before(async () => {
   });
 });
 
-after(() => {
-  proc.kill();
-  fs.rmSync(dataDir, { recursive: true, force: true });
+after(async () => {
+  // Wait for the server to fully exit before deleting its files: on Windows the
+  // database stays locked (EBUSY) until the process is gone.
+  if (proc.exitCode === null) {
+    const exited = new Promise((resolve) => proc.once('exit', resolve));
+    proc.kill();
+    await exited;
+  }
+  fs.rmSync(dataDir, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
 });
 
 let admin, staff, itemId;
